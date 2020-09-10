@@ -1,49 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Basic Communication</title>
+  <title>agora</title>
   <link rel="stylesheet" href="./assets/common.css" />
 </head>
 <body class="agora-theme">
   <div class="navbar-fixed">
     <nav class="agora-navbar">
       <div class="nav-wrapper agora-primary-bg valign-wrapper">
-        <h5 class="left-align">Basic Communication</h5>
-        <a href="https://github.com/AgoraIO/Basic-Video-Call/tree/master/One-to-One-Video/Agora-Web-Tutorial-1to1" class="agora-github-pin"></a>
+        <h5 class="left-align">agoraサンプル</h5>
       </div>
     </nav>
   </div>
   <form id="form" class="row col l12 s12">
+    <!-- メインページここから -->
     <div class="row container col l12 s12">
+      <!-- 左側全体ここから -->
       <div class="col" style="min-width: 433px; max-width: 443px">
+        <!-- 入力フォーム ここから -->
         <div class="card" style="margin-top: 0px; margin-bottom: 0px;">
           <div class="row card-content" style="margin-bottom: 0px;">
-              <div class="input-field">
-                <label for="appID" class="active">App ID</label>
-                <input type="text" placeholder="App ID" name="appID">
-              </div>
-              <div class="input-field">
-                <label for="channel" class="active">Channel</label>
-                <input type="text" placeholder="channel" name="channel">
-              </div>
-              <div class="input-field">
-                <label for="token" class="active">Token</label>
-                <input type="text" placeholder="token" name="token">
-              </div>
-              <div class="row" style="margin: 0">
-                <div class="col s12">
+            <div class="input-field">
+              <label for="appID" class="active">App ID</label>
+              <input type="text" placeholder="App ID" name="appID">
+            </div>
+            <div class="input-field">
+              <label for="channel" class="active">Channel</label>
+              <input type="text" placeholder="channel" name="channel">
+            </div>
+            <div class="input-field">
+              <label for="token" class="active">Token</label>
+              <input type="text" placeholder="token" name="token">
+            </div>
+            <div class="row" style="margin: 0">
+              <div class="col s12">
                 <button class="btn btn-raised btn-primary waves-effect waves-light" id="join">入室</button>
                 <button class="btn btn-raised btn-primary waves-effect waves-light" id="leave">退室</button>
                 <button class="btn btn-raised btn-primary waves-effect waves-light" id="publish">公開</button>
                 <button class="btn btn-raised btn-primary waves-effect waves-light" id="unpublish">非公開</button>
-                </div>
               </div>
+            </div>
           </div>
         </div>
+        <!-- 入力フォーム ここまで -->
+        <!-- 通話設定ここから -->
         <ul class="collapsible card agora-secondary-border" style="margin-top: .4rem; border: 1px ">
           <li>
             <div class="collapsible-header agora-secondary-bg">
@@ -77,7 +80,6 @@
                         <input type="radio" class="with-gap" name="mode" value="live" checked />
                         <span>ライブ</span>
                       </label>
-
                       <label>
                         <input type="radio" class="with-gap" name="mode" value="rtc" />
                         <span>録画</span>
@@ -93,7 +95,6 @@
                         <input type="radio" class="with-gap" name="codec" value="h264" checked />
                         <span>h264</span>
                       </label>
-
                       <label>
                         <input type="radio" class="with-gap" name="codec" value="vp8" />
                         <span>vp8</span>
@@ -102,9 +103,13 @@
                   </div>
                 </div>
               </div>
+            </div>
           </li>
         </ul>
+        <!-- 通話設定ここまで -->
       </div>
+      <!-- 左側全体ここからここまで -->
+      <!-- ビデオ画面ここから -->
       <div class="col s7">
         <div class="video-grid" id="video">
           <div class="video-view">
@@ -114,13 +119,16 @@
           </div>
         </div>
       </div>
+      <!-- ビデオ画面ここまで -->
     </div>
+    <!-- メインページここまで -->
   </form>
+
+
   <script src="vendor/jquery.min.js"></script>
   <script src="vendor/materialize.min.js"></script>
   <script src="AgoraRTCSDK-3.2.0.js"></script>
   <script>
-    console.log("agora sdk version: " + AgoraRTC.VERSION + " compatible: " + AgoraRTC.checkSystemRequirements());
     var resolutions = [
       {
         name: "default",
@@ -347,30 +355,12 @@
       })
     }
 
-    /**
-      * rtc: rtc object
-      * option: {
-      *  mode: string, "live" | "rtc"
-      *  codec: string, "h264" | "vp8"
-      *  appID: string
-      *  channel: string, channel name
-      *  uid: number
-      *  token; string,
-      * }
-     **/
     function join (rtc, option) {
       if (rtc.joined) {
         Toast.error("Your already joined")
         return;
       }
 
-      /**
-       * A class defining the properties of the config parameter in the createClient method.
-       * Note:
-       *    Ensure that you do not leave mode and codec as empty.
-       *    Ensure that you set these properties before calling Client.join.
-       *  You could find more detail here. https://docs.agora.io/en/Video/API%20Reference/web/interfaces/agorartc.clientconfig.html
-      **/
       rtc.client = AgoraRTC.createClient({mode: option.mode, codec: option.codec})
 
       rtc.params = option
@@ -382,26 +372,6 @@
       rtc.client.init(option.appID, function () {
         console.log("init success")
 
-        /**
-         * Joins an AgoraRTC Channel
-         * This method joins an AgoraRTC channel.
-         * Parameters
-         * tokenOrKey: string | null
-         *    Low security requirements: Pass null as the parameter value.
-         *    High security requirements: Pass the string of the Token or Channel Key as the parameter value. See Use Security Keys for details.
-         *  channel: string
-         *    A string that provides a unique channel name for the Agora session. The length must be within 64 bytes. Supported character scopes:
-         *    26 lowercase English letters a-z
-         *    26 uppercase English letters A-Z
-         *    10 numbers 0-9
-         *    Space
-         *    "!", "#", "$", "%", "&", "(", ")", "+", "-", ":", ";", "<", "=", ".", ">", "?", "@", "[", "]", "^", "_", "{", "}", "|", "~", ","
-         *  uid: number | null
-         *    The user ID, an integer. Ensure this ID is unique. If you set the uid to null, the server assigns one and returns it in the onSuccess callback.
-         *   Note:
-         *      All users in the same channel should have the same type (number or string) of uid.
-         *      If you use a number as the user ID, it should be a 32-bit unsigned integer with a value ranging from 0 to (232-1).
-        **/
         rtc.client.join(option.token ? option.token : null, option.channel, option.uid ? +option.uid : null, function (uid) {
           Toast.notice("join channel: " + option.channel + " success, uid: " + uid)
           console.log("join channel: " + option.channel + " success, uid: " + uid)
