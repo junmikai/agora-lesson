@@ -167,11 +167,11 @@ function handleEvents(rtc) {
     }
     Toast.notice("peer leave");
   });
-  // Occurs when the local stream is published.
+  // ローカルストリームが公開されたときに発生します。
   rtc.client.on("stream-published", function (evt) {
     Toast.notice("stream published success");
   });
-  // Occurs when the remote stream is added.
+  // リモートストリームが追加されたときに発生します。
   rtc.client.on("stream-added", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -180,7 +180,7 @@ function handleEvents(rtc) {
       rtc.client.subscribe(remoteStream, function (err) {});
     }
   });
-  // Occurs when a user subscribes to a remote stream.
+  // ユーザーがリモートストリームをサブスクライブすると発生します。
   rtc.client.on("stream-subscribed", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -189,7 +189,7 @@ function handleEvents(rtc) {
     remoteStream.play("remote_video_" + id);
     Toast.info("stream-subscribed remote-uid: " + id);
   });
-  // Occurs when the remote stream is removed; for example, a peer user calls Client.unpublish.
+  // リモートストリームが削除されたときに発生します。
   rtc.client.on("stream-removed", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -262,6 +262,7 @@ function join(rtc, option) {
             microphoneId: option.microphoneId,
             cameraId: option.cameraId,
           });
+
           // ローカルストリームを初期化します。 初期化の完了後に実行されるコールバック関数
           rtc.localStream.init(
             // 初期化に成功した時
@@ -318,64 +319,67 @@ function publish(rtc) {
   Toast.info("公開しました");
   rtc.published = true;
 }
-
+// localStreamを非公開する
 function unpublish(rtc) {
   if (!rtc.client) {
-    Toast.error("Please Join Room First")
+    Toast.error("最初に部屋に参加してください");
     return
   }
   if (!rtc.published) {
-    Toast.error("Your didn't publish")
+    Toast.error("あなたは公開しませんでした");
     return
   }
   var oldState = rtc.published
   rtc.client.unpublish(rtc.localStream, function (err) {
     rtc.published = oldState
-    Toast.error("unpublish failed")
+    Toast.error("非公開に失敗しました");
     console.error(err)
   })
-  Toast.info("unpublish")
+  Toast.info("非公開にしました");
   rtc.published = false
 }
 
 function leave(rtc) {
   if (!rtc.client) {
-    Toast.error("Please Join First!")
-    return
+    Toast.error("最初に部屋に参加してください");
+    return;
   }
   if (!rtc.joined) {
-    Toast.error("You are not in channel")
-    return
+    Toast.error("チャンネルにいません");
+    return;
   }
-  /**
-   * Leaves an AgoraRTC Channel
-   * This method enables a user to leave a channel.
-   **/
-  rtc.client.leave(function () {
-    // stop stream
-    if (rtc.localStream.isPlaying()) {
-      rtc.localStream.stop()
-    }
-    // close stream
-    rtc.localStream.close()
-    for (let i = 0; i < rtc.remoteStreams.length; i++) {
-      var stream = rtc.remoteStreams.shift()
-      var id = stream.getId()
-      if (stream.isPlaying()) {
-        stream.stop()
+  // AgoraRTCチャネルを離れます。このメソッドは、ユーザーがチャンネルを離れることを可能にします。
+  rtc.client.leave(
+    function () {
+      // ストリームの再生を停止します
+      if (rtc.localStream.isPlaying()) {
+        rtc.localStream.stop();
       }
-      removeView(id)
+      // ストリームを閉じます
+      rtc.localStream.close();
+      // 残りのリモートの配信を順番に停止させる
+      for (let i = 0; i < rtc.remoteStreams.length; i++) {
+        var stream = rtc.remoteStreams.shift();
+        var id = stream.getId();
+        if (stream.isPlaying()) {
+          stream.stop();
+        }
+        // 対象のHTMLを削除する
+        removeView(id);
+      }
+      // ビデオの情報全て初期化する
+      rtc.localStream = null;
+      rtc.remoteStreams = [];
+      rtc.client = null;
+      rtc.published = false;
+      rtc.joined = false;
+      Toast.notice("退室成功しました");
+    },
+    function (err) {
+      Toast.error("退室成功しました");
+      console.error(err);
     }
-    rtc.localStream = null
-    rtc.remoteStreams = []
-    rtc.client = null
-    rtc.published = false
-    rtc.joined = false
-    Toast.notice("leave success")
-  }, function (err) {
-    Toast.error("leave success")
-    console.error(err)
-  })
+  );
 }
 
 // ここから読み込み時発火する
@@ -416,7 +420,7 @@ $(function () {
       join(rtc, params);
     }
   });
-  // This publishes the video feed to Agora
+  // 公開ボタンをクリックした時
   $("#publish").on("click", function (e) {
     e.preventDefault();
     var params = serializeformData();
@@ -424,7 +428,7 @@ $(function () {
       publish(rtc);
     }
   });
-  // Unpublishes the video feed from Agora
+  // 非公開ボタンを押した時
   $("#unpublish").on("click", function (e) {
     e.preventDefault();
     var params = serializeformData();
@@ -432,7 +436,7 @@ $(function () {
       unpublish(rtc);
     }
   });
-  // Leeaves the chanenl if someone clicks the leave button
+  // 退室ボタンを押した時
   $("#leave").on("click", function (e) {
     e.preventDefault();
     var params = serializeformData();
