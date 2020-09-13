@@ -1,3 +1,4 @@
+// 設定に追加されるHTML要素
 var resolutions = [
   {
     name: "default",
@@ -16,11 +17,11 @@ var resolutions = [
     value: "1080p"
   }
 ]
-
+// フラッシュ
 function Toastify(options) {
   M.toast({ html: options.text, classes: options.classes })
 }
-
+// フラッシュ
 var Toast = {
   info: (msg) => {
     Toastify({
@@ -41,10 +42,14 @@ var Toast = {
     })
   }
 }
+// フォームの中身と[("appID", "channel")];
 function validator(formData, fields) {
+  // フォームの各種キーを取得
   var keys = Object.keys(formData)
   for (let key of keys) {
+    // appIDとchannelの値が入力フォームに存在してる場合チェック開始
     if (fields.indexOf(key) != -1) {
+      // appIDとchannelの値が存在していない場合エラーを吐く
       if (!formData[key]) {
         Toast.error("Please Enter " + key)
         return false
@@ -64,7 +69,7 @@ function serializeformData() {
   }
   return obj
 }
-
+// id = remoteStream.getId();
 function addView(id, show) {
   if (!$("#" + id)[0]) {
     $("<div/>", {
@@ -95,6 +100,7 @@ function removeView(id) {
 }
 
 function getDevices(next) {
+  console.log("next");
   AgoraRTC.getDevices(function (items) {
     items.filter(function (item) {
       return ["audioinput", "videoinput"].indexOf(item.kind) !== -1
@@ -384,8 +390,10 @@ function leave(rtc) {
 
 // ここから読み込み時発火する
 $(function () {
+  console.log("読み込み");
   // これにより、すべてのデバイスがフェッチされ、すべてのデバイスのUIが読み込まれます.（オーディオとビデオ)
   getDevices(function (devices) {
+    console.log(devices);
     devices.audios.forEach(function (audio) {
       $("<option/>", {
         value: audio.value,
