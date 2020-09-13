@@ -100,7 +100,6 @@ function removeView(id) {
 }
 
 function getDevices(next) {
-  console.log("next");
   AgoraRTC.getDevices(function (items) {
     items.filter(function (item) {
       return ["audioinput", "videoinput"].indexOf(item.kind) !== -1
@@ -390,10 +389,8 @@ function leave(rtc) {
 
 // ここから読み込み時発火する
 $(function () {
-  console.log("読み込み");
   // これにより、すべてのデバイスがフェッチされ、すべてのデバイスのUIが読み込まれます.（オーディオとビデオ)
   getDevices(function (devices) {
-    console.log(devices);
     devices.audios.forEach(function (audio) {
       $("<option/>", {
         value: audio.value,
