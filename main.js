@@ -42,32 +42,35 @@ var Toast = {
     })
   }
 }
-// フォームの中身と[("appID", "channel")];
+// appIDとchannelの値が存在しているか確認する
 function validator(formData, fields) {
   // フォームの各種キーを取得
   var keys = Object.keys(formData)
   for (let key of keys) {
-    // appIDとchannelの値が入力フォームに存在してる場合チェック開始
+    // 入力フォームの内fields(appID,channel)だけif文発動
     if (fields.indexOf(key) != -1) {
-      // appIDとchannelの値が存在していない場合エラーを吐く
+      // appIDとchannelの値が存在していない場合"key"を入力してくださいとエラーが出る
       if (!formData[key]) {
-        Toast.error("Please Enter " + key)
-        return false
+        Toast.error(key + "を入力してください ");
+        return false;
       }
     }
   }
   return true
 }
-// フォームデータ(設定も含む)を配列化にしてobjにまとめる
+
 function serializeformData() {
-  var formData = $("#form").serializeArray()
-  var obj = {}
+  // 入力フォームの内nameとvalueを、JSONキーとvalueの形式にします
+  var formData = $("#form").serializeArray();
+  var obj = {};
   for (var item of formData) {
-    var key = item.name
-    var val = item.value
-    obj[key] = val
+    // nameとvalueを、それぞれ変数keyとvalに収納します
+    var key = item.name;
+    var val = item.value;
+    //objに各入力フォームをname:valという形で収納します
+    obj[key] = val;
   }
-  return obj
+  return obj;
 }
 // id = remoteStream.getId();
 function addView(id, show) {
@@ -99,48 +102,55 @@ function removeView(id) {
   }
 }
 
+// 1-5:配列videosとaudiosを持ってgetDevicesを発動させる
 function getDevices(next) {
+  // 1-1:各種デバイスを取得
   AgoraRTC.getDevices(function (items) {
-    items.filter(function (item) {
-      return ["audioinput", "videoinput"].indexOf(item.kind) !== -1
-    })
+    // 1-2:マイクとスピーカーだけを取得 → その後name、value、kindを追加する
+    items
+      .filter(function (item) {
+        return ["audioinput", "videoinput"].indexOf(item.kind) !== -1;
+      })
       .map(function (item) {
         return {
           name: item.label,
           value: item.deviceId,
           kind: item.kind,
-        }
-      })
-    var videos = []
-    var audios = []
+        };
+      });
+    var videos = [];
+    var audios = [];
+    // 1-3:全てのデバイス情報を配列videosかaudiosに追加する
     for (var i = 0; i < items.length; i++) {
-      var item = items[i]
+      var item = items[i];
       if ("videoinput" == item.kind) {
-        var name = item.label
-        var value = item.deviceId
+        var name = item.label;
+        var value = item.deviceId;
+        // 1-3※:nameが存在しない場合下記の名前を追加する
         if (!name) {
-          name = "camera-" + videos.length
+          name = "camera-" + videos.length;
         }
         videos.push({
           name: name,
           value: value,
-          kind: item.kind
-        })
+          kind: item.kind,
+        });
       }
       if ("audioinput" == item.kind) {
-        var name = item.label
-        var value = item.deviceId
+        var name = item.label;
+        var value = item.deviceId;
         if (!name) {
-          name = "microphone-" + audios.length
+          name = "microphone-" + audios.length;
         }
         audios.push({
           name: name,
           value: value,
-          kind: item.kind
-        })
+          kind: item.kind,
+        });
       }
     }
-    next({ videos: videos, audios: audios })
+    // 1-4:getDevicesの引数を準備
+    next({ videos: videos, audios: audios });
   })
 }
 
@@ -176,7 +186,7 @@ function handleEvents(rtc) {
   rtc.client.on("stream-published", function (evt) {
     Toast.notice("stream published success");
   });
-  // リモートストリームが追加されたときに発生します。
+  // リモートストリームが追加されたときに発生します。(=他のユーザーが既にチャネルにいる場合、こちらを参照する。)
   rtc.client.on("stream-added", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -185,7 +195,7 @@ function handleEvents(rtc) {
       rtc.client.subscribe(remoteStream, function (err) {});
     }
   });
-  // ユーザーがリモートストリームをサブスクライブすると発生します。
+  // リモートビデオをHTMLに追加し、再生を始めます
   rtc.client.on("stream-subscribed", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -222,35 +232,30 @@ function handleEvents(rtc) {
 // params = serializeformData();
 // serializeformData() = $("#form").serializeArray();
 function join(rtc, option) {
+  console.log(rtc)
   // もし入室済みの場合はエラーを返す
   if (rtc.joined) {
-    Toast.error("Your already joined");
+    Toast.error("参加済みです");
     return;
   }
+  // rtc.client = クライアント(受ける人)を作成。この時モードとコーデックを設定する
   rtc.client = AgoraRTC.createClient({
     mode: option.mode,
     codec: option.codec,
   });
-  // rtc = ビデオの情報全て
-  // rtc.client = 配信の情報
   rtc.params = option;
-
   // 各種ボタンを押した時の処理
   handleEvents(rtc);
-
-  // clientの初期化
+  // rtc.client = 配信情報のセットアップ
   rtc.client.init(
     option.appID,
+    // appIDが正しい場合チャンネルに参加する
     function () {
-      // チャンネルの参加
       rtc.client.join(
-        // トークン
         option.token ? option.token : null,
-        // チャンネル
         option.channel,
-        // uid
         option.uid ? +option.uid : null,
-        // チャンネルの参加した時の処理
+        // セットアップの参加した時の処理
         function (uid) {
           Toast.notice(
             "join channel: " + option.channel + " success, uid: " + uid
@@ -258,7 +263,7 @@ function join(rtc, option) {
           rtc.joined = true;
           rtc.params.uid = uid;
 
-          // ローカルストリームを作成する
+          // ストリームオブジェクトを作成(まだ再生されない)
           rtc.localStream = AgoraRTC.createStream({
             streamID: rtc.params.uid,
             audio: true,
@@ -267,12 +272,11 @@ function join(rtc, option) {
             microphoneId: option.microphoneId,
             cameraId: option.cameraId,
           });
-
-          // ローカルストリームを初期化します。 初期化の完了後に実行されるコールバック関数
+          // ローカルストリームをセットアップ
           rtc.localStream.init(
             // 初期化に成功した時
             function () {
-              // HTML要素ID「local_stream」でストリームを再生します
+              // HTML要素ID「local_stream」で配信を再生します
               rtc.localStream.play("local_stream");
               // ローカルストリームを公開する
               publish(rtc);
@@ -286,7 +290,7 @@ function join(rtc, option) {
             }
           );
         },
-        // チャンネルの参加に失敗した時
+        // チャンネルの参加に失敗した時(誤ったappidを入力した時)
         function (err) {
           Toast.error(
             "クライアントの参加に失敗しました。コンソールを開いて詳細を参照してください"
@@ -303,6 +307,9 @@ function join(rtc, option) {
     }
   );
 }
+
+
+
 
 function publish(rtc) {
   if (!rtc.client) {
@@ -389,7 +396,8 @@ function leave(rtc) {
 
 // ここから読み込み時発火する
 $(function () {
-  // これにより、すべてのデバイスがフェッチされ、すべてのデバイスのUIが読み込まれます.（オーディオとビデオ)
+  // deviceにはdideosとaudiosが収納されている
+  // 2-1:マイク、カメラ、解像度をselectの後ろに追加する
   getDevices(function (devices) {
     devices.audios.forEach(function (audio) {
       $("<option/>", {
@@ -403,7 +411,6 @@ $(function () {
         text: video.name,
       }).appendTo("#cameraId");
     });
-    // カメラ解像度を設定のoptionを追加
     resolutions.forEach(function (resolution) {
       $("<option/>", {
         value: resolution.value,
@@ -418,9 +425,9 @@ $(function () {
   // 入室ボタンをクリックした時
   $("#join").on("click", function (e) {
     e.preventDefault();
-    // データはフォーム要素から抜き出され、シリアル化(直列化)されます。
+    // 3-1:各入力フォームは{key:name}で収納される
     var params = serializeformData();
-    // データとID&チャンネルの値に問題がなければjoinを実行
+    // 3-2:データとID&チャンネルの値が存在していればjoin実行
     if (validator(params, fields)) {
       join(rtc, params);
     }
