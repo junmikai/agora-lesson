@@ -1,4 +1,3 @@
-// 設定に追加されるHTML要素
 var resolutions = [
   {
     name: "default",
@@ -17,11 +16,9 @@ var resolutions = [
     value: "1080p"
   }
 ]
-// フラッシュ
 function Toastify(options) {
   M.toast({ html: options.text, classes: options.classes })
 }
-// フラッシュ
 var Toast = {
   info: (msg) => {
     Toastify({
@@ -102,31 +99,23 @@ function removeView(id) {
   }
 }
 
-// 1-5:配列videosとaudiosを持ってgetDevicesを発動させる
+// videosとaudiosを持ってgetDevicesを発動させる
 function getDevices(next) {
-  // 1-1:各種デバイスを取得
+  // 各種デバイスを取得
   AgoraRTC.getDevices(function (items) {
-    // 1-2:マイクとスピーカーだけを取得 → その後name、value、kindを追加する
-    items
-      .filter(function (item) {
+    // マイクとスピーカーだけを取得 → その後name、value、kindを追加する
+    items.filter(function (item) {
         return ["audioinput", "videoinput"].indexOf(item.kind) !== -1;
       })
-      .map(function (item) {
-        return {
-          name: item.label,
-          value: item.deviceId,
-          kind: item.kind,
-        };
-      });
     var videos = [];
     var audios = [];
-    // 1-3:全てのデバイス情報を配列videosかaudiosに追加する
+    // 全てのデバイス情報を配列videosかaudiosに追加する
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
       if ("videoinput" == item.kind) {
         var name = item.label;
         var value = item.deviceId;
-        // 1-3※:nameが存在しない場合下記の名前を追加する
+        // nameが存在しない場合下記の名前を追加する
         if (!name) {
           name = "camera-" + videos.length;
         }
@@ -149,7 +138,7 @@ function getDevices(next) {
         });
       }
     }
-    // 1-4:getDevicesの引数を準備
+    // getDevicesの引数を準備
     next({ videos: videos, audios: audios });
   })
 }
@@ -188,8 +177,10 @@ function handleEvents(rtc) {
   });
   // リモートストリームが追加されたときに発生します。(=他のユーザーが既にチャネルにいる場合、こちらを参照する。)
   rtc.client.on("stream-added", function (evt) {
+    console.log(evt);
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
+    console.log(id);
     Toast.info("stream-added uid: " + id);
     if (id !== rtc.params.uid) {
       rtc.client.subscribe(remoteStream, function (err) {});
@@ -232,7 +223,6 @@ function handleEvents(rtc) {
 // params = serializeformData();
 // serializeformData() = $("#form").serializeArray();
 function join(rtc, option) {
-  console.log(rtc)
   // もし入室済みの場合はエラーを返す
   if (rtc.joined) {
     Toast.error("参加済みです");
@@ -397,7 +387,7 @@ function leave(rtc) {
 // ここから読み込み時発火する
 $(function () {
   // deviceにはdideosとaudiosが収納されている
-  // 2-1:マイク、カメラ、解像度をselectの後ろに追加する
+  // マイク、カメラ、解像度をselectの後ろに追加する
   getDevices(function (devices) {
     devices.audios.forEach(function (audio) {
       $("<option/>", {
@@ -425,9 +415,9 @@ $(function () {
   // 入室ボタンをクリックした時
   $("#join").on("click", function (e) {
     e.preventDefault();
-    // 3-1:各入力フォームは{key:name}で収納される
+    // 各入力フォームは{key:name}で収納される
     var params = serializeformData();
-    // 3-2:データとID&チャンネルの値が存在していればjoin実行
+    // データとID&チャンネルの値が存在していればjoin実行
     if (validator(params, fields)) {
       join(rtc, params);
     }
