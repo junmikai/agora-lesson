@@ -115,10 +115,6 @@ function getDevices(next) {
       if ("videoinput" == item.kind) {
         var name = item.label;
         var value = item.deviceId;
-        // nameが存在しない場合下記の名前を追加する
-        if (!name) {
-          name = "camera-" + videos.length;
-        }
         videos.push({
           name: name,
           value: value,
@@ -128,9 +124,6 @@ function getDevices(next) {
       if ("audioinput" == item.kind) {
         var name = item.label;
         var value = item.deviceId;
-        if (!name) {
-          name = "microphone-" + audios.length;
-        }
         audios.push({
           name: name,
           value: value,
@@ -153,40 +146,38 @@ var rtc = {
 }
 
 function handleEvents(rtc) {
-  // リモートが離れた時発動
+  // 相手が配信を停止した時発火(切断も含む)
   rtc.client.on("peer-leave", function (evt) {
     var id = evt.uid;
     // 変数 streamsはremoteStreamsの配列を空にする
     let streams = rtc.remoteStreams.filter((e) => id !== e.getId());
-    // 変数 peerStreamは現在のIDのリモート
+    // 変数 peerStreamは相手の配信の現在のID
     let peerStream = rtc.remoteStreams.find((e) => id === e.getId());
-    // リモートの配信を停止させる
+    // 相手の配信を停止させる
     if (peerStream && peerStream.isPlaying()) {
       peerStream.stop();
     }
-    // 配信情報のリモートの配列を空にする
+    // 相手の配信情報を空にする
     rtc.remoteStreams = streams;
     if (id !== rtc.params.uid) {
       removeView(id);
     }
     Toast.notice("peer leave");
   });
-  // ローカルストリームが公開されたときに発生します。
+  // 相手の配信が公開されたときに発生します。
   rtc.client.on("stream-published", function (evt) {
     Toast.notice("stream published success");
   });
-  // リモートストリームが追加されたときに発生します。(=他のユーザーが既にチャネルにいる場合、こちらを参照する。)
+   // 配信が作成された時に発動します(自分以外の場合はstream-subscribedを発火)
   rtc.client.on("stream-added", function (evt) {
-    console.log(evt);
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
-    console.log(id);
     Toast.info("stream-added uid: " + id);
     if (id !== rtc.params.uid) {
       rtc.client.subscribe(remoteStream, function (err) {});
     }
   });
-  // リモートビデオをHTMLに追加し、再生を始めます
+  // 相手の配信をHTMLに追加し、再生を始めます
   rtc.client.on("stream-subscribed", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -195,7 +186,7 @@ function handleEvents(rtc) {
     remoteStream.play("remote_video_" + id);
     Toast.info("stream-subscribed remote-uid: " + id);
   });
-  // リモートストリームが削除されたときに発生します。
+  // 相手の配信が非公開になった時発火(切断や終了した場合は発火しない)
   rtc.client.on("stream-removed", function (evt) {
     var remoteStream = evt.stream;
     var id = remoteStream.getId();
@@ -262,21 +253,21 @@ function join(rtc, option) {
             microphoneId: option.microphoneId,
             cameraId: option.cameraId,
           });
-          // ローカルストリームをセットアップ
+          // 自分の配信をセットアップ
           rtc.localStream.init(
             // 初期化に成功した時
             function () {
               // HTML要素ID「local_stream」で配信を再生します
               rtc.localStream.play("local_stream");
-              // ローカルストリームを公開する
+              // 自分の配信を公開する
               publish(rtc);
             },
             // 初期化に失敗した時
             function (err) {
               Toast.error(
-                "ストリームの初期化に失敗しました。コンソールを開いてください"
+                "配信の初期化に失敗しました。コンソールを開いてください"
               );
-              console.error("ローカルストリームの初期化に失敗しました", err);
+              console.error("配信の初期化に失敗しました", err);
             }
           );
         },
@@ -285,13 +276,13 @@ function join(rtc, option) {
           Toast.error(
             "クライアントの参加に失敗しました。コンソールを開いて詳細を参照してください"
           );
-          console.error("クライアントの参加に失敗しました", err);
+          console.error("チャンネルの参加に失敗しました", err);
         }
       );
     },
     (err) => {
       Toast.error(
-        "クライアントの初期化に失敗しました。コンソールを開いて詳細を参照してください"
+        "チャンネルの初期化に失敗しました。コンソールを開いて詳細を参照してください"
       );
       console.error(err);
     }
@@ -307,7 +298,7 @@ function publish(rtc) {
     return;
   }
   if (rtc.published) {
-    Toast.error("あなたの公開済み");
+    Toast.error("あなたは公開済みです");
     return;
   }
   var oldState = rtc.published;
@@ -353,13 +344,13 @@ function leave(rtc) {
   // AgoraRTCチャネルを離れます。このメソッドは、ユーザーがチャンネルを離れることを可能にします。
   rtc.client.leave(
     function () {
-      // ストリームの再生を停止します
+      // 配信の再生を停止します
       if (rtc.localStream.isPlaying()) {
         rtc.localStream.stop();
       }
-      // ストリームを閉じます
+      // 配信を閉じます(削除します)
       rtc.localStream.close();
-      // 残りのリモートの配信を順番に停止させる
+      // 残りの相手の配信を順番に停止させる
       for (let i = 0; i < rtc.remoteStreams.length; i++) {
         var stream = rtc.remoteStreams.shift();
         var id = stream.getId();
@@ -369,7 +360,7 @@ function leave(rtc) {
         // 対象のHTMLを削除する
         removeView(id);
       }
-      // ビデオの情報全て初期化する
+      // 配信の情報全て初期化する
       rtc.localStream = null;
       rtc.remoteStreams = [];
       rtc.client = null;
