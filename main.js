@@ -164,7 +164,7 @@ function handleEvents(rtc) {
     }
     Toast.notice("peer leave");
   });
-  // 相手の配信が公開されたときに発生します。
+  // 配信が公開されたときに発生します。
   rtc.client.on("stream-published", function (evt) {
     Toast.notice("stream published success");
   });
